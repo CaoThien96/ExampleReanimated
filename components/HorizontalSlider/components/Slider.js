@@ -9,8 +9,8 @@ const { Value, max, add } = Animated;
 
 const { width: totalWidth } = Dimensions.get("window");
 const minximum = 1
-const maxximum = 2
-const step = 0.1
+const maxximum = 3
+const step = 0.5
 const count = ((maxximum - minximum) / step) + 1;
 const width = (totalWidth - 32 - 25) / count;
 const height = width;
@@ -24,9 +24,9 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ({ minValue = 1, maxValue = 400, step = 0.1 }) => {
+export default ({ minValue = 1, maxValue = 3, step = 0.5 }) => {
     const points = useMemo(() => {
-        return ((maxximum - minximum) / step) + 1;
+        return ((maxValue - minValue) / step) + 1;
     }, [])
     const size = useMemo(() => {
         return (totalWidth - 32 - 25) / (points - 1)
