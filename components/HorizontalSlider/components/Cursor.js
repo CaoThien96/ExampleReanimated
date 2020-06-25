@@ -52,17 +52,7 @@ export default ({ size, count, x, step, minValue, callBackValue }) => {
   }, [])
   const translateX = React.useMemo(() => {
     return clamp(
-      cond(
-        eq(state, State.END),
-        set(
-          offset,
-          timing({
-            from: value,
-            to: snapPoint(value, velocityX, snapPoints),
-          })
-        ),
-        value
-      ),
+      value,
       0,
       (count - 1) * size
     )
@@ -72,6 +62,28 @@ export default ({ size, count, x, step, minValue, callBackValue }) => {
     block([
       set(x, translateX),
       call([index], ([a]) => {
+        let result = null
+        let value = a * size
+        for (let index = 0; index < snapPoints.length - 1; index++) {
+          const element = snapPoints[index];
+          const nextElement = snapPoints[index + 1]
+          if (element === value) {
+            result = index
+          }
+          if (nextElement === value) {
+            result = index + 1
+          }
+          if (element < value && value < nextElement) {
+            const delta1 = value - element
+            const delta2 = nextElement - value
+            if (delta1 < delta2) {
+              result = index
+            } else {
+              result = index + 1
+            }
+          }
+        }
+        console.log('DCM result', result)
         callBackValue && callBackValue(a * step + minValue)
       })
     ]),
@@ -85,8 +97,8 @@ export default ({ size, count, x, step, minValue, callBackValue }) => {
           <Animated.View
             style={{
               ...StyleSheet.absoluteFillObject,
-              width: 25,
-              height: 20,
+              width: 50,
+              height: 50,
               borderRadius: 2,
               backgroundColor: "white",
               elevation: 5,
@@ -103,7 +115,7 @@ export default ({ size, count, x, step, minValue, callBackValue }) => {
               transform: [{ translateX: x }],
             }}
           >
-            <ReText style={{ fontSize: 24 }} text={concat(add(multiply(index, 0.1), 1))} />
+            <ReText style={{ fontSize: 12 }} text={concat(add(multiply(index, 0.1), 1))} />
 
           </Animated.View>
         </PanGestureHandler>

@@ -13,7 +13,7 @@ if (__DEV__) {
 export default function App() {
   return (
     <View style={styles.container}>
-      {/* <RangerSlider /> */}
+      <Slider />
       {/* <View style={{
         backgroundColor: 'blue', flex: 1, alignItems: 'center',
         justifyContent: 'center',
@@ -22,7 +22,7 @@ export default function App() {
       }}>
 
       </View> */}
-      <TextInputFake minValue={1} maxValue={2} step={0.1} />
+      {/* <ListInput minValue={1} maxValue={2} step={0.1} /> */}
     </View>
 
   );
