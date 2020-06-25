@@ -7,13 +7,14 @@ import TextInputFake from './components/InputFake/index'
 import Slider from './components/HorizontalSlider/components/Slider'
 import Interactable from './components/Interactable/index'
 import ListInput from './components/InputSlider/index'
+import SliderTest from './components/SliderTest/index'
 if (__DEV__) {
   import('./reactotronConfig').then(() => console.log('Reactotron Configured'))
 }
 export default function App() {
   return (
     <View style={styles.container}>
-      <Slider />
+      <SliderTest />
       {/* <View style={{
         backgroundColor: 'blue', flex: 1, alignItems: 'center',
         justifyContent: 'center',
