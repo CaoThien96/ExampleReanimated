@@ -23,22 +23,22 @@ const {
 // export type TimingConfig = Partial<Omit<Animated.TimingConfig, "toValue">>;
 
 export const mix = (
-        value,
-        x,
-        y
-    ) => add(x, multiply(value, sub(y, x)));
+    value,
+    x,
+    y
+) => add(x, multiply(value, sub(y, x)));
 
-export const step = (value, edge) =>lessThan(value, edge)
-;
+export const step = (value, edge) => lessThan(value, edge)
+    ;
 
-export const smoothstep =(
-        value,
-        edge0,
-        edge1
-    ) => {
-        const t = clamp(divide(sub(value, edge0), sub(edge1, edge0)), 0, 1);
-        return multiply(t, t, sub(3, multiply(2, t)));
-    } ;
+export const smoothstep = (
+    value,
+    edge0,
+    edge1
+) => {
+    const t = clamp(divide(sub(value, edge0), sub(edge1, edge0)), 0, 1);
+    return multiply(t, t, sub(3, multiply(2, t)));
+};
 
 
 
@@ -97,27 +97,27 @@ export const snapPoint = (
     );
 };
 
-export const addTo = 
+export const addTo =
     (value, node) =>
         set(value, add(value, node))
-;
+    ;
 
-export const subTo = 
+export const subTo =
     (value, node) =>
         set(value, sub(value, node))
-;
+    ;
 
-export const multiplyTo = 
+export const multiplyTo =
     (value, node) =>
         set(value, multiply(value, node))
-;
+    ;
 
-export const divideTo = 
+export const divideTo =
     (value, node) =>
         set(value, divide(value, node))
-;
+    ;
 
-export const moduloTo = 
+export const moduloTo =
     (value, node) =>
         set(value, modulo(value, node))
-;
+    ;

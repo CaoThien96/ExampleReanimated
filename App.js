@@ -22,7 +22,7 @@ export default function App() {
       }}>
 
       </View> */}
-      <ListInput minValue={1} maxValue={2} step={0.1} />
+      <TextInputFake minValue={1} maxValue={2} step={0.1} />
     </View>
 
   );

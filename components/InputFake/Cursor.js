@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import Animated from 'react-native-reanimated'
 import { loop } from '../../libs/redash/index'
 const componentName = ({
-    params,
+    value
 }) => {
     const opacity = useMemo(() => {
         return loop({
@@ -12,7 +12,11 @@ const componentName = ({
         })
     }, [])
     return (
-        <Animated.View style={{ width: 2, height: 16, backgroundColor: 'gray', opacity }}>
+        <Animated.View style={{
+            width: 2, height: 16, backgroundColor: 'gray', opacity, transform: [{
+                translateX: value
+            }]
+        }}>
 
         </Animated.View>
     )
