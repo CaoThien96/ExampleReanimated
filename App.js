@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import LoadingComp, { TestPanel } from './LoadingComp'
 import BoxTransition from './components/BoxTransition/BoxTransition'
@@ -12,9 +12,14 @@ if (__DEV__) {
   import('./reactotronConfig').then(() => console.log('Reactotron Configured'))
 }
 export default function App() {
+  const [value, setValue] = useState('')
   return (
     <View style={styles.container}>
-      <SliderTest />
+      <Text>
+        Cao Van Thien
+      </Text>
+      <TextInput onChangeText={text => setValue(text)} value={value} placeholder={'Enter text'} />
+      <TextInputFake value={value} />
       {/* <View style={{
         backgroundColor: 'blue', flex: 1, alignItems: 'center',
         justifyContent: 'center',
