@@ -45,14 +45,19 @@ function createSnapoint(listWidth) {
     return snapPoint
     console.info('DCM snapPoint', snapPoint)
 }
+function useOnChangeValue({ value, setList }) {
+    return useEffect(() => {
+        setList(value.toString().split(''))
+    }, [value])
+}
 const componentName = ({
-    params,
+    value
 }) => {
     const listWidth = useRef([])
     const dic = useRef()
     const [translateX, setTranslateX] = useState(0)
     const [snapPoints, setSnapoints] = useState([0])
-    const [listCharater, setList] = useState(123.567.toString().split(''))
+    const [listCharater, setList] = useState(value.toString().split(''))
 
     const [isfocus, setFocus] = useState(false)
     const onLayout = useCallback((e, key) => {
@@ -68,6 +73,7 @@ const componentName = ({
     }, [])
 
     const gestureHandler = onGestureEvent({ state, x });
+    useOnChangeValue({ value, setList })
     useEffect(() => {
         setTimeout(() => {
             listWidth.current = listWidth.current.sort((a, b) => {
@@ -82,49 +88,14 @@ const componentName = ({
         }, 1000);
     }, [])
 
-    // console.info('DCM snappoint', refSnap.current)
     console.info('DCM snappoint state', snapPoints)
-    // [
-    //     "DCM snappoint state",
-    //     [
-    //       0,
-    //       8,
-    //       18,
-    //       28.5,
-    //       34.5,
-    //       45,
-    //       55.5,
-    //       65
-    //     ]
-    //   ]
-    // console.info('DCM test', test)
-    // useCode(block([
-    //     call([x, snapPoint(x, velocityX, snapPoints)], ([a, b]) => {
-    //         console.info('DCM y', a, b)
-    //     })
-    // ]), [snapPoints.length])
+
     return (
         <View style={{
-            flex: 1,
             borderWidth: 1,
             justifyContent: 'center',
             width: '100%'
         }}>
-            <TextInput placeholder='Enter text' />
-            <Text>{dic.current}</Text>
-            <TouchableOpacity
-                onPress={() => {
-                    const index = dic.current
-                    const tmp = listCharater.slice(0, index)
-                    const tmp2 = listCharater.slice(index)
-                    console.info('DCM list text', tmp, tmp2)
-                    tmp.pop()
-                    setList([...tmp, ...tmp2])
-                    x.setValue(snapPoints[index - 1])
-                }}
-            >
-                <Text>Xoa</Text>
-            </TouchableOpacity>
             <View
                 onPress={() => {
                     // setFocus(true)
@@ -153,7 +124,7 @@ const componentName = ({
 
                 {
                     listCharater.map((el, key) => {
-                        return <Text onLayout={(e) => onLayout(e, key)}>{el}</Text>
+                        return <Text key={key} onLayout={(e) => onLayout(e, key)}>{el}</Text>
                     })
                 }
                 <TapGestureHandler {...gestureHandler}>
