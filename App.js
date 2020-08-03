@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { useMemo, useLayoutEffect, useState, useEffect, useCallback } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard, Easing, TouchableOpacity, Dimensions } from 'react-native';
 import LoadingComp, { TestPanel } from './LoadingComp'
 import BoxTransition from './components/BoxTransition/BoxTransition'
 import RangerSlider from './components/RangerSlider'
@@ -8,22 +8,83 @@ import Slider from './components/HorizontalSlider/components/Slider'
 import Interactable from './components/Interactable/index'
 import ListInput from './components/InputSlider/index'
 import SliderTest from './components/SliderTest/index'
+import BottomSheet from './components/bottom_sheet_reanimated/index'
+import Animated from 'react-native-reanimated'
+const { height: heightDevice } = Dimensions.get('window')
 if (__DEV__) {
   import('./reactotronConfig').then(() => console.log('Reactotron Configured'))
 }
+const Comp = ({ index, animatedValue = new Animated.Value(0) }) => {
+  const [isShow, setShow] = useState(false)
+  useLayoutEffect(() => {
+    animatedValue.addListener(({ value }) => {
+      const count = Math.random()
+      console.log('dasdasdsdas', value, count)
+      if (value === index * 100) {
+        console.log('dcm shoiw', index)
+        setShow(true)
+      }
+    })
+  }, [])
+  if (!isShow) return null
+  return (<Text style={{
+    width: '100%',
+    height: 24,
+    textAlign: 'center',
+    backgroundColor: 'red',
+    marginTop: 16
+  }}>{index}</Text>)
+}
 export default function App() {
+  const { animatedValue, translateMaster, scrollValue } = useMemo(() => {
+    return {
+      animatedValue: new Animated.Value(0),
+      translateMaster: new Animated.Value(0),
+      scrollValue: new Animated.Value(0)
+    }
+  }, [])
+  useEffect(() => {
+
+  }, [])
   return (
     <View style={styles.container}>
-      <SliderTest />
+      {/* <SliderTest /> */}
       {/* <View style={{
         backgroundColor: 'blue', flex: 1, alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
         paddingHorizontal: 16
       }}>
-
+      
       </View> */}
       {/* <ListInput minValue={1} maxValue={2} step={0.1} /> */}
+      {/* {
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(el => (
+          <Comp animatedValue={animatedValue} index={el} />
+        ))
+      } */}
+      {/* <BottomSheet/> */}
+      <BottomSheet
+        onShow={() => console.log('Show')}
+        onHide={() => console.log('hide')}
+        snapPoints={[heightDevice - 66, 0]}
+        translateMaster={translateMaster}
+        scrollValue={scrollValue}
+        renderContent={() => {
+          return new Array(20).fill(0).map((el, key) => <View style={{
+            height: 40,
+            marginBottom: 16,
+            width: '100%',
+            backgroundColor: 'blue'
+          }} ><Text>{key}</Text></View>)
+        }}
+        renderHeader={() => {
+          return <View style={{ height: 40, backgroundColor: 'red', width: '100%' }} />
+        }}
+      />
+      <Animated.Code exec={Animated.block([
+        Animated.call([translateMaster], ([a]) => console.log('transY', a))
+      ])} />
     </View>
 
   );
@@ -32,7 +93,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: 'gray',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
