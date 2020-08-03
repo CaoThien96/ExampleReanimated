@@ -226,6 +226,7 @@ export default class BottomSheetBehavior extends Component {
                 this.velocity,
                 this.preventDecaying),
             masterOffseted);
+        this.backdropOpacity = Animated.sub(0.8, Animated.multiply(divide(this.translateMaster, this.state.snapPoints[this.state.snapPoints.length - 1]), 0.8))
     }
     onDone = (translateY) => {
         if (translateY === 0) {
@@ -395,8 +396,9 @@ export default class BottomSheetBehavior extends Component {
                     height: '100%',
                     position: 'absolute',
                     borderWidth: 1,
-                    borderColor: 'yellow',
-                    width: '100%'
+                    backgroundColor: 'yellow',
+                    width: '100%',
+                    opacity: this.backdropOpacity
                 }}
                     onLayout={this.handleFullHeader}
                 />
