@@ -1,5 +1,5 @@
 import React, { useMemo, useLayoutEffect, useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard, Easing, TouchableOpacity, Dimensions } from 'react-native';
+import { StatusBar, StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard, Easing, TouchableOpacity, Dimensions } from 'react-native';
 import LoadingComp, { TestPanel } from './LoadingComp'
 import BoxTransition from './components/BoxTransition/BoxTransition'
 import RangerSlider from './components/RangerSlider'
@@ -10,6 +10,7 @@ import ListInput from './components/InputSlider/index'
 import SliderTest from './components/SliderTest/index'
 import BottomSheet from './components/bottom_sheet_reanimated/index'
 import Animated from 'react-native-reanimated'
+import ExampleSequenceFlatlist from './components/SequenceFlatList/Example'
 const { height: heightDevice } = Dimensions.get('window')
 if (__DEV__) {
   import('./reactotronConfig').then(() => console.log('Reactotron Configured'))
@@ -48,43 +49,8 @@ export default function App() {
   }, [])
   return (
     <View style={styles.container}>
-      {/* <SliderTest /> */}
-      {/* <View style={{
-        backgroundColor: 'blue', flex: 1, alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        paddingHorizontal: 16
-      }}>
-      
-      </View> */}
-      {/* <ListInput minValue={1} maxValue={2} step={0.1} /> */}
-      {/* {
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(el => (
-          <Comp animatedValue={animatedValue} index={el} />
-        ))
-      } */}
-      {/* <BottomSheet/> */}
-      <BottomSheet
-        onShow={() => console.log('Show')}
-        onHide={() => console.log('hide')}
-        snapPoints={[heightDevice - 66, 0]}
-        translateMaster={translateMaster}
-        scrollValue={scrollValue}
-        renderContent={() => {
-          return new Array(20).fill(0).map((el, key) => <View style={{
-            height: 40,
-            marginBottom: 16,
-            width: '100%',
-            backgroundColor: 'blue'
-          }} ><Text>{key}</Text></View>)
-        }}
-        renderHeader={() => {
-          return <View style={{ height: 40, backgroundColor: 'red', width: '100%' }} />
-        }}
-      />
-      <Animated.Code exec={Animated.block([
-        Animated.call([translateMaster], ([a]) => console.log('transY', a))
-      ])} />
+      <StatusBar />
+      <ExampleSequenceFlatlist />
     </View>
 
   );
