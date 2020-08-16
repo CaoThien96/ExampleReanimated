@@ -39,7 +39,7 @@ const fakeDataNews = [
     }
 ]
 let arr = []
-for (let index = 0; index < 5; index++) {
+for (let index = 0; index < 10; index++) {
     arr.push(index)
 }
 const Example = ({

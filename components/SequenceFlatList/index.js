@@ -42,10 +42,11 @@ export class SquenceView extends PureComponent {
         return this.duration / this.totalCountData
     }
     getStartInterpolate = () => {
-        return this.delta + this.index * this.delta / 2
+        console.info('DCM start', this.index * this.delta / 2, this.index)
+        return this.index * this.delta / 2
     }
     getEndInterpolate = () => {
-        console.log('DCM ', this.index * this.delta + this.delta, this.index)
+        console.info('DCM end', this.index * this.delta + this.delta, this.index)
         return this.index * this.delta + this.delta
     }
     getOutputRangeOpacity = () => {
