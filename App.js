@@ -43,6 +43,7 @@ export default function App() {
       scrollValue: new Animated.Value(0)
     }
   }, [])
+  const [isShow, show] = useState(false)
   useEffect(() => {
 
   }, [])
@@ -64,27 +65,37 @@ export default function App() {
         ))
       } */}
       {/* <BottomSheet/> */}
-      <BottomSheet
-        onShow={() => console.log('Show')}
-        onHide={() => console.log('hide')}
-        snapPoints={[heightDevice - 66, 0]}
-        translateMaster={translateMaster}
-        scrollValue={scrollValue}
-        renderContent={() => {
-          return new Array(20).fill(0).map((el, key) => <View style={{
-            height: 40,
-            marginBottom: 16,
-            width: '100%',
-            backgroundColor: 'blue'
-          }} ><Text>{key}</Text></View>)
-        }}
-        renderHeader={() => {
-          return <View style={{ height: 40, backgroundColor: 'red', width: '100%' }} />
-        }}
-      />
-      <Animated.Code exec={Animated.block([
-        Animated.call([translateMaster], ([a]) => console.log('transY', a))
-      ])} />
+      <TouchableOpacity onPress={() => show(true)}>
+        <Text>Show</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => show(false)}>
+        <Text>Hide</Text>
+      </TouchableOpacity>
+      {
+        isShow && (
+          <BottomSheet
+            onShow={() => console.log('Show')}
+            onHide={() => console.log('hide')}
+            snapPoints={[0, heightDevice]}
+            translateMaster={translateMaster}
+            scrollValue={scrollValue}
+            styleContent={{
+              marginTop: 100
+            }}
+            renderContent={() => {
+              return new Array(20).fill(0).map((el, key) => <View style={{
+                height: 40,
+                marginBottom: 16,
+                width: '100%',
+                backgroundColor: 'blue'
+              }} ><Text>{key}</Text></View>)
+            }}
+            renderHeader={() => {
+              return <View style={{ height: 40, backgroundColor: 'red', width: '100%' }} />
+            }}
+          />
+        )
+      }
     </View>
 
   );

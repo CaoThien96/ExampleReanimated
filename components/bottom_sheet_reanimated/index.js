@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Dimensions, Platform, View } from 'react-native';
+import { Dimensions, Platform, View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import {
     PanGestureHandler,
@@ -108,7 +108,7 @@ function withDecaying(drag, state, decayClock, velocity, prevent) {
     ]);
 }
 
-function runSpring(clock, value, velocity, dest, damping = P(9, 7), wasRun = 0, isManuallySet = 0, onDone) {
+function runSpring(clock, value, velocity, dest, damping = P(9, 7), wasRun = 0, isManuallySet = 0) {
     const state = {
         finished: new Value(0),
         velocity: new Value(0),
@@ -136,7 +136,7 @@ function runSpring(clock, value, velocity, dest, damping = P(9, 7), wasRun = 0, 
             cond(defined(wasRun), set(wasRun, 1))
         ]),
         spring(clock, state, config),
-        cond(state.finished, [stopClock(clock), call([state.position], ([a]) => onDone && onDone(a))]),
+        cond(state.finished, [stopClock(clock)]),
         state.position
     ];
 }
@@ -196,7 +196,7 @@ export default class BottomSheetBehavior extends Component {
                             set(masterOffseted,
                                 runSpring(masterClock, masterOffseted, this.masterVelocity,
                                     cond(this.isManuallySetValue, this.manuallySetValue, this.snapPoint),
-                                    dampingForMaster, wasRun, this.isManuallySetValue, this.onDone)
+                                    dampingForMaster, wasRun, this.isManuallySetValue)
                             ),
                             set(this.isManuallySetValue, 0)
                         ]
@@ -228,14 +228,7 @@ export default class BottomSheetBehavior extends Component {
             masterOffseted);
         this.backdropOpacity = Animated.sub(0.8, Animated.multiply(divide(this.translateMaster, this.state.snapPoints[this.state.snapPoints.length - 1]), 0.8))
     }
-    onDone = (translateY) => {
-        if (translateY === 0) {
-            this.props.onShow()
-        }
-        if (translateY === this.state.snapPoints[this.state.snapPoints.length - 1]) {
-            this.props.onHide()
-        }
-    }
+
     handleMasterPan = event([{
         nativeEvent: ({
             translationY: this.dragMasterY,
@@ -256,7 +249,7 @@ export default class BottomSheetBehavior extends Component {
 
     withEnhancedLimits(val, masterOffseted) {
         const wasRunMaster = new Animated.Value(0);
-        const min = multiply(-1, add(this.state.heightOfContent, this.state.heightOfHeaderAnimated));
+        const min = multiply(-1, sub(this.state.heightOfContent, sub(this.height, this.state.heightOfHeaderAnimated)));
         const prev = new Animated.Value(0);
         const limitedVal = new Animated.Value(0);
         const diffPres = new Animated.Value(0);
@@ -268,6 +261,7 @@ export default class BottomSheetBehavior extends Component {
 
         const rev = new Animated.Value(0);
         return block([
+
             set(rev, limitedVal),
             cond(or(eq(this.panState, State.BEGAN), and(eq(this.panState, State.ACTIVE), eq(prevState, State.END))), [
                 set(prev, val),
@@ -276,11 +270,21 @@ export default class BottomSheetBehavior extends Component {
                 set(wasRunMaster, 0)
             ], [
                 set(limitedVal, add(limitedVal, sub(val, prev))),
-                cond(lessThan(limitedVal, min), set(limitedVal, min))
+                call([limitedVal, min], ([a, b]) => {
+                    console.info('lessThan', a, b)
+                }),
+                cond(lessThan(limitedVal, min), [
+                    call([limitedVal], ([a]) => {
+                        console.info('limitedVal', a)
+                    }),
+                    set(limitedVal, min)
+
+                ])
             ]),
             set(prevState, this.panState), // some iOS shit
             set(diffPres, sub(prev, val)),
             set(prev, val),
+
             cond(or(greaterOrEq(limitedVal, 0),
                 greaterThan(masterOffseted, 0))
                 , [
@@ -321,7 +325,9 @@ export default class BottomSheetBehavior extends Component {
         this.manuallySetValue.setValue(this.state.snapPoints[this.state.propsToNewIncides[index]]);
         this.isManuallySetValue.setValue(1);
     };
-
+    componentDidMount() {
+        this.snapTo(1)
+    }
     height = new Animated.Value(0)
 
     handleLayoutHeader = ({
@@ -349,7 +355,7 @@ export default class BottomSheetBehavior extends Component {
                 height
             }
         }
-    }) => this.state.heightOfContent.setValue(height - this.props.snapPoints[0]);
+    }) => this.state.heightOfContent.setValue(height);
 
     static renumber = str => Number(str.split('%')[0]) * screenHeight / 100
     static getDerivedStateFromProps(props, state) {
@@ -374,7 +380,6 @@ export default class BottomSheetBehavior extends Component {
         sortedPropsSnapPints.forEach(({ ind }, i) => propsToNewIncides[ind] = i);
 
         const { initialSnap } = props;
-
         return {
             init: sortedPropsSnapPints[0].val - sortedPropsSnapPints[propsToNewIncides[initialSnap]].val,
             propsToNewIncides,
@@ -388,33 +393,35 @@ export default class BottomSheetBehavior extends Component {
     master = React.createRef();
 
     render() {
-        console.log('this.props.snapPoints[0] - this.state.heightOfHeader', this.props.snapPoints[0], this.state.heightOfHeader)
         const { heightOfHeader = 0 } = this.state
+        const { styleContent } = this.props
         return (
-            <React.Fragment>
-                <Animated.View style={{
-                    height: '100%',
-                    position: 'absolute',
+            <View style={{
+                flex: 1,
+                width: '100%',
+                borderWidth: 1, borderColor: 'red'
+            }}>
+                <Animated.View style={[StyleSheet.absoluteFillObject, {
                     borderWidth: 1,
                     backgroundColor: 'yellow',
-                    width: '100%',
                     opacity: this.backdropOpacity
-                }}
-                    onLayout={this.handleFullHeader}
+                }]}
                 />
-                <Animated.View style={{
-                    width: '100%',
-                    position: 'absolute',
-                    zIndex: 100,
-                    transform: [
+                <Animated.View
+                    onLayout={this.handleFullHeader}
+                    style={[
+                        styleContent,
                         {
-                            translateY: this.translateMaster
-                        },
-                        {
-                            translateY: sub(this.height, this.state.initSnap)
+                            width: '100%',
+                            flex: 1,
+                            zIndex: 100,
+                            transform: [
+                                {
+                                    translateY: this.translateMaster
+                                },
+                            ]
                         }
-                    ]
-                }}>
+                    ]}>
                     <PanGestureHandler
                         enabled={this.props.enabledGestureInteraction}
                         ref={this.master}
@@ -429,11 +436,13 @@ export default class BottomSheetBehavior extends Component {
                             onLayout={this.handleLayoutHeader}
                         >
                             {this.props.renderHeader && this.props.renderHeader()}
+                            <TouchableOpacity onPress={() => this.snapTo(0)}>
+                                <Text>Hide</Text>
+                            </TouchableOpacity>
                         </Animated.View>
                     </PanGestureHandler>
                     <View
                         style={{
-                            height: this.props.snapPoints[0] - heightOfHeader,
                             overflow: 'hidden'
                         }}
                     >
@@ -464,28 +473,9 @@ export default class BottomSheetBehavior extends Component {
                                 </TapGestureHandler>
                             </Animated.View>
                         </PanGestureHandler>
-                        <Animated.Code
-                            exec={onChange(this.tapState, cond(eq(this.tapState, State.BEGAN), stopClock(this.decayClock)))} />
-                        {this.props.callbackNode &&
-                            <Animated.Code
-                                exec={onChange(this.translateMaster, set(this.props.callbackNode, divide(this.translateMaster, this.state.snapPoints[this.state.snapPoints.length - 1])))} />}
-                        {/* <Animated.Code exec={block([
-                            cond(eq(this.translateMaster, this.state.snapPoints[this.state.snapPoints.length - 1]), [call([], () => this.props.onHide && this.props.onHide())], []),
-                            cond(eq(this.translateMaster, this.state.snapPoints[0]), [call([], () => this.props.onShow && this.props.onShow())], [])
-                        ])} /> */}
-                        {
-                            this.props.translateMaster && (
-                                <Animated.Code exec={onChange(this.translateMaster, set(this.props.translateMaster, this.translateMaster))} />
-                            )
-                        }
-                        {
-                            this.props.scrollValue && (
-                                <Animated.Code exec={onChange(this.Y, set(this.props.scrollValue, this.Y))} />
-                            )
-                        }
                     </View>
                 </Animated.View>
-            </React.Fragment>
+            </View>
         );
     }
 }
