@@ -1,5 +1,5 @@
 import React, { useMemo, useLayoutEffect, useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard, Easing, TouchableOpacity, Dimensions } from 'react-native';
+import { StatusBar, StyleSheet, Text, View, TextInput, TouchableWithoutFeedback, Keyboard, Easing, TouchableOpacity, Dimensions } from 'react-native';
 import LoadingComp, { TestPanel } from './LoadingComp'
 import BoxTransition from './components/BoxTransition/BoxTransition'
 import RangerSlider from './components/RangerSlider'
@@ -10,6 +10,7 @@ import ListInput from './components/InputSlider/index'
 import SliderTest from './components/SliderTest/index'
 import BottomSheet from './components/bottom_sheet_reanimated/index'
 import Animated from 'react-native-reanimated'
+import ExampleSequenceFlatlist from './components/SequenceFlatList/Example'
 const { height: heightDevice } = Dimensions.get('window')
 if (__DEV__) {
   import('./reactotronConfig').then(() => console.log('Reactotron Configured'))
