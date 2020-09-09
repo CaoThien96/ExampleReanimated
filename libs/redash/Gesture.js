@@ -44,23 +44,23 @@ export const pinchBegan = (state) =>
   Platform.OS === "android"
     ? cond(eq(diff(state), State.ACTIVE - State.BEGAN), eq(state, State.ACTIVE))
     : eq(state, State.BEGAN)
-;
+  ;
 
-export const pinchActive = 
+export const pinchActive =
   (state, numberOfPointers) =>
     and(
       eq(state, State.ACTIVE),
       eq(numberOfPointers, 2),
       Platform.OS === "android" ? not(pinchBegan(state)) : 1
     )
-;
+  ;
 
-export const pinchEnd = 
+export const pinchEnd =
   (state, numberOfPointers) =>
     Platform.OS === "android"
       ? or(eq(state, State.END), lessThan(numberOfPointers, 2))
       : eq(state, State.END)
-;
+  ;
 
 export const withScaleOffset = (
   value,
@@ -237,6 +237,7 @@ export const onGestureEvent = (
   nativeEvent
 ) => {
   const gestureEvent = event([{ nativeEvent }]);
+  console.info('gestureEvent', gestureEvent)
   return {
     onHandlerStateChange: gestureEvent,
     onGestureEvent: gestureEvent,
@@ -328,7 +329,7 @@ export const debugGestureState = (
   label,
   state
 ) => {
-  const d = (value)=>
+  const d = (value) =>
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     debug(label, new Value(value));
