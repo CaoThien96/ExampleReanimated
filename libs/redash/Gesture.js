@@ -237,7 +237,6 @@ export const onGestureEvent = (
   nativeEvent
 ) => {
   const gestureEvent = event([{ nativeEvent }]);
-  console.info('gestureEvent', gestureEvent)
   return {
     onHandlerStateChange: gestureEvent,
     onGestureEvent: gestureEvent,
