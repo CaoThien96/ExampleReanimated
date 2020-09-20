@@ -1,5 +1,5 @@
-import Reactotron, { networking } from 'reactotron-react-native';
-
+import Reactotron, { networking, asyncStorage } from 'reactotron-react-native';
+import AsyncStorage from "@react-native-community/async-storage";
 if (__DEV__) {
     // const emitter = new EventEmitter();
 
@@ -9,10 +9,12 @@ if (__DEV__) {
     // bars()(buffer()(events)).subscribe();
 
     // https://github.com/infinitered/reactotron for more options!
-    Reactotron.configure({ name: 'equix' })
+    Reactotron
+        .configure({ name: 'equix' })
         .useReactNative({
             networking: false
         })
+        .setAsyncStorageHandler(AsyncStorage)
         .connect();
 
     // Let's clear Reactotron on every time we load the app

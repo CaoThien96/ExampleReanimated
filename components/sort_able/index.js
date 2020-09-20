@@ -11,7 +11,8 @@ import {
     onGestureEvent,
     snapPoint,
     onScrollEvent,
-    timing
+    timing,
+    round as reRound
 } from "../../libs/redash";
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -21,16 +22,16 @@ if (Platform.OS === 'android') {
 const ITEM_HEIGHT = 100
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 const { height: heightDevices } = Dimensions.get('window')
-const { Value, eq, set, call, onChange, block, useCode, cond, add, divide, round, diff, greaterThan, greaterOrEq, lessThan, multiply, sub, and, or, abs, lessOrEq } = Animated
+const { floor, Value, eq, set, call, onChange, block, useCode, cond, add, divide, round, diff, greaterThan, greaterOrEq, lessThan, multiply, sub, and, or, abs, lessOrEq } = Animated
 const Alpha = ['A', 'B', 'C', 'D', 'E']
-const exampleData = [...Array(500)].map((d, index) => ({
+const exampleData = [...Array(12)].map((d, index) => ({
     key: `item-${index}`, // For example only -- don't use index as your key!
     label: index,
-    backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index *
-        5}, ${132})`
+    backgroundColor: 'red'
 }));
 const useInitData = () => useMemo(() => {
     return [
+        new Value(-1),
         new Value(-1),
         new Value(-1)
     ]
@@ -48,18 +49,24 @@ const mapInitState = (state, init) => {
     console.info('state', state)
     return { ...state, ...init }
 }
-const Item = React.memo(({ item, index, isHover = false, onDrag, isActive }) => {
+const Item = React.memo(({ item, index, isHover = false, onDrag, isActive, onSnapToTop }) => {
+    const onSnapToTopCb = useMemo(() => {
+        return () => onSnapToTop({ item, index })
+    }, [])
     return (
         <TouchableOpacity
+            onPress={onSnapToTopCb}
             disabled={isHover}
             onLongPress={() => onDrag(item, index)}
         >
             <View style={{
-                height: 100,
-                backgroundColor: index % 2 === 0 ? 'red' : 'blue',
+                height: 90,
+                backgroundColor: 'red',
+                marginTop: 10,
                 alignItems: "center",
                 justifyContent: "center",
-                opacity: isActive ? 0 : 1
+                opacity: isActive ? 0 : 1,
+                borderWidth: 1
             }}>
                 <Text
                     style={{
@@ -84,15 +91,35 @@ const useListenerDirectionMove = (velocityY) => {
         ])
     }, [])
 }
+const findIndexActive = ({ item, viewableItems, keyExtractor }) => {
+    const key = keyExtractor(item)
+    let activeItem = null
+    let activeIndex = null
+
+    viewableItems.forEach((element, index) => {
+        if (keyExtractor(element.item) === key) {
+            activeItem = element;
+            activeIndex = index
+        }
+    });
+    console.info('DCM key', activeItem,
+        activeIndex)
+
+    return {
+        activeItem,
+        activeIndex
+    }
+}
 const Index = ({
     heightRow = 100,
     keyExtractor = (item, index) => `${index}`
 }) => {
     const [state, dispatch] = useReducer(reducer, initState, (state) => mapInitState(state, { data: exampleData }))
     const dic = useRef({
-        data: exampleData
+        data: exampleData,
+        viewableItems: []
     })
-    const [activeIndex, hoverIndex] = useInitData()
+    const [activeIndex, hoverIndex, isMoveUp] = useInitData()
     const [panState, translationY, translateYOffset, absoluteY, velocityY, contentOffsetY] = useMemo(() => {
         return [
             new Value(State.UNDETERMINED),
@@ -104,7 +131,7 @@ const Index = ({
             new Value(0)
         ]
     }, [])
-    const isMoveUp = useListenerDirectionMove(velocityY)
+    // const isMoveUp = useListenerDirectionMove(velocityY)
     const gestureHandler = onGestureEvent({ state: panState, translationY, absoluteY, velocityY });
     const scrollEvent = onScrollEvent({ y: contentOffsetY })
     const [cellData] = useInitCellData({
@@ -124,7 +151,29 @@ const Index = ({
             }
         })
     }, [])
+    const handleSnapToTop = useCallback(({ item }) => {
+        const key = keyExtractor(item)
+        console.info('DCM key', key, dic.current.viewableItems)
+        let activeItem = null
+        let activeIndex = null
 
+        dic.current.viewableItems.forEach((element, index) => {
+            if (keyExtractor(element.item) === key) {
+                activeItem = element;
+                activeIndex = index
+            }
+        });
+        tronV2(activeIndex)
+        console.info('DCM activeItem', activeItem, activeIndex)
+    }, [])
+    const tronV2 = useCallback((activeIndex) => {
+        dic.current.viewableItems
+        // Handle trong activeIndex with activeIndex -1 
+        if (activeIndex <= 0) return
+        console.info('DCM start swap', activeIndex, activeIndex - 1)
+        tron({ indexStart: activeIndex - 1, indexEnd: activeIndex })
+        tronV2(activeIndex - 1)
+    }, [])
     const tron = useCallback(({ indexStart = 4, indexEnd = 5 }) => {
         const data = dic.current.data
         const left = data.slice(0, indexStart)
@@ -134,12 +183,12 @@ const Index = ({
         const itemBottom = data[indexEnd]
         const newData = [...left, itemBottom, ...mid, itemTop, ...end]
         LayoutAnimation.create(
-            200,
+            500,
             LayoutAnimation.Types.linear,
             LayoutAnimation.Properties.opacity
         )
         dic.current.data = newData,
-            console.info('DCM tron left,mid,end', left, mid, end)
+            console.info('DCM tron left,mid,end', left, mid, end, itemTop, itemBottom, newData)
         dispatch({
             type: TYPE.CHANGE_DATA,
             payload: {
@@ -150,14 +199,121 @@ const Index = ({
     const renderItem = useCallback(({ item, index, isHover = false }) => {
         return (
             <Item
-                {...{ item, index, isHover, onDrag, state, isActive: item.key === state.item.key }}
+                {...{ item, index, isHover, onDrag, state, isActive: item.key === state.item.key, onSnapToTop: handleSnapToTop }}
             />
         )
     }, [state.item.key])
+    const renderHoverRowV2 = useCallback(() => {
+        if (!state.hoverComponent) return
+        const key = keyExtractor(state.item)
+        console.info('DCM state.hoverComponent', state, key)
+        const { activeIndex: activeIndexValue, activeItem } = findIndexActive({
+            item: state.item,
+            viewableItems: dic.current.viewableItems,
+            keyExtractor
+        })
+        const paddingTop = cellData.get(key).offsetY
+        const indexDistance = new Value(0)
+        activeIndex.setValue(activeIndexValue)
+        const value = add(sub(paddingTop, contentOffsetY), translationY)
+        const isTopActiveItem = cond(lessOrEq(translationY, 0), 1, 0)
+        const distance = block(
+            cond(
+                eq(isMoveUp, DIRECTION.UP),
+                cond(
+                    eq(isTopActiveItem, 1),
+                    add(translationY, -ITEM_HEIGHT / 2),
+                    add(translationY, ITEM_HEIGHT / 2)
+                ),
+                cond(
+                    eq(isTopActiveItem, 1),
+                    add(translationY, -ITEM_HEIGHT / 2),
+                    add(translationY, ITEM_HEIGHT / 2)
+                )
+            )
+        )
+        const deltal = cond(eq(isTopActiveItem, 1), multiply(floor(abs(divide(
+            distance,
+            ITEM_HEIGHT
+        ))), -1), floor(divide(
+            distance,
+            ITEM_HEIGHT
+        )))
+        return (
+            <Animated.View pointerEvents={'box-none'} style={[StyleSheet.absoluteFillObject, {
+                paddingTop: value
+            }]}>
+                {!!state.hoverComponent && state.hoverComponent}
+                <Animated.Code exec={block([
+                    onChange(translationY, block([
+                        set(
+                            indexDistance,
+                            deltal
+                        ),
+                        // call([
+                        //     translationY,
+                        //     floor(
+                        //         divide(
+                        //             add(abs(translationY), ITEM_HEIGHT / 2),
+                        //             ITEM_HEIGHT
+                        //         )
+                        //     ),
+                        //     divide(
+                        //         add(abs(translationY), ITEM_HEIGHT / 2),
+                        //         ITEM_HEIGHT
+                        //     ),
+                        //     sub(activeIndexValue,
+                        //         floor(
+                        //             divide(
+                        //                 add(abs(translationY), ITEM_HEIGHT / 2),
+                        //                 ITEM_HEIGHT
+                        //             )
+                        //         ))
+                        // ], ([a, b, c, d]) => {
+                        //     console.info('DCM ', a, b, c, d)
+                        // }),
+                    ])),
+                    onChange(indexDistance, block([
+                        cond(
+                            eq(isMoveUp, DIRECTION.UP),
+                            call([indexDistance], ([a]) => {
+                                const index = activeIndexValue + a
+                                console.info('swap', index, index + 1)
+                                tron({
+                                    indexStart: index, indexEnd: index + 1
+                                })
+                            }),
+                            call([indexDistance], ([a]) => {
+                                const index = activeIndexValue + a
+                                console.info('swap', index, index - 1)
+                                tron({ indexStart: index - 1, indexEnd: index })
+                            })
+                        )
+                    ])),
+                    // onChange(velocityY, call([velocityY], ([a]) => {
+                    //     // console.info('velocityY', a)
+                    // })),
+                    // onChange(isMoveUp, call([isMoveUp], ([a]) => {
+                    //     console.info('isMove', a)
+                    // })),
+                    // onChange(activeIndex, block([
+                    //     call([activeIndex], ([a]) => {
+                    //         console.info('change activeIndex', a)
+                    //     })
+                    // ]))
+                ])} />
+            </Animated.View>
+        )
+    }, [state.hoverComponent])
     const renderHoverRow = useCallback(() => {
         if (!state.hoverComponent) return
         const key = keyExtractor(state.item)
         // console.info('DCM state.hoverComponent', state, key)
+        const { activeIndex, activeItem } = findIndexActive({
+            item: state.item,
+            viewableItems: dic.current.viewableItems,
+            keyExtractor
+        })
         const paddingTop = cellData.get(key).offsetY
 
         const value = add(sub(paddingTop, contentOffsetY), translationY)
@@ -187,7 +343,7 @@ const Index = ({
                 <Animated.Code exec={block([
                     onChange(activeIndex, block([
                         cond(greaterThan(activeIndex, 0), [
-                            call([activeIndex, value], ([a, b, c, d]) => {
+                            call([activeIndex, value, isMoveUp], ([a, b, c, d]) => {
                                 console.info('DCM active', a)
                             }),
                         ])
@@ -255,9 +411,26 @@ const Index = ({
             </Animated.View>
         )
     }, [state.hoverComponent])
+
+    const onViewableItemsChanged = useCallback(({
+        viewableItems,
+        changed,
+    }) => {
+        console.info("Visible items are", viewableItems);
+        // console.info("Changed in this iteration", changed);
+        dic.current.viewableItems = viewableItems
+    }, [])
+    const viewabilityConfig = useMemo(() => {
+        return {
+            // At least one of the viewAreaCoveragePercentThreshold or itemVisiblePercentThreshold is required.
+            viewAreaCoveragePercentThreshold: 1,
+        }
+    }, [])
     const renderList = useMemo(() => {
         return (
             <AnimatedFlatList
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
                 updateCellsBatchingPeriod={30}
                 getItemLayout={(data, index) => (
                     { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index }
@@ -282,25 +455,47 @@ const Index = ({
             }
         })
     }, [])
+    const { preTranslationY, nextTranslationY } = useMemo(() => {
+        return {
+            nextTranslationY: new Value(0),
+            preTranslationY: new Value(0),
+        }
+    }, [])
     useCode(block([
+        onChange(translationY, block([
+            set(preTranslationY, nextTranslationY),
+            set(nextTranslationY, translationY),
+            // call([preTranslationY, nextTranslationY], ([a, b]) => console.info('object', a, b)),
+            cond(greaterThan(sub(nextTranslationY, preTranslationY), 0), set(isMoveUp, DIRECTION.DOWN), set(isMoveUp, DIRECTION.UP))
+        ])),
+        // onChange(
+        //     velocityY,
+        //     cond(
+        //         lessThan(velocityY, 0),
+        //         set(isMoveUp, DIRECTION.UP),
+        //         cond(
+        //             greaterThan(velocityY, 0),
+        //             set(isMoveUp, DIRECTION.DOWN)
+        //         ))),
         cond(or(
             eq(panState, State.END),
             eq(panState, State.CANCELLED),
             eq(panState, State.FAILED)
         ), [call([], onRelease)]),
         call([contentOffsetY], ([a]) => {
-            console.info('contentOffset', a)
         })
     ]), [panState])
     return (
-        <PanGestureHandler {...gestureHandler}>
+        <PanGestureHandler
+            minDist={8}
+            {...gestureHandler}>
             <Animated.View onLayout={e => console.info('heightDevices - e.nativeEvent.layout.height', heightDevices - e.nativeEvent.layout.height)} style={{
                 flex: 1,
                 borderWidth: 1,
                 borderColor: 'red'
             }}>
                 {renderList}
-                {renderHoverRow()}
+                {renderHoverRowV2()}
 
             </Animated.View>
 
