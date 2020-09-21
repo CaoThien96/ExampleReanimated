@@ -11,7 +11,8 @@ import {
     onGestureEvent,
     snapPoint,
     onScrollEvent,
-    timing
+    timing,
+    round as reRound
 } from "../../libs/redash";
 if (Platform.OS === 'android') {
     if (UIManager.setLayoutAnimationEnabledExperimental) {
@@ -21,16 +22,16 @@ if (Platform.OS === 'android') {
 const ITEM_HEIGHT = 100
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 const { height: heightDevices } = Dimensions.get('window')
-const { Value, eq, set, call, onChange, block, useCode, cond, add, divide, round, diff, greaterThan, greaterOrEq, lessThan, multiply, sub, and, or, abs, lessOrEq } = Animated
+const { floor, Value, eq, set, call, onChange, block, useCode, cond, add, divide, round, diff, greaterThan, greaterOrEq, lessThan, multiply, sub, and, or, abs, lessOrEq } = Animated
 const Alpha = ['A', 'B', 'C', 'D', 'E']
 const exampleData = [...Array(15)].map((d, index) => ({
     key: `item-${index}`, // For example only -- don't use index as your key!
     label: index,
-    backgroundColor: `rgb(${Math.floor(Math.random() * 255)}, ${index *
-        5}, ${132})`
+    backgroundColor: 'red'
 }));
 const useInitData = () => useMemo(() => {
     return [
+        new Value(-1),
         new Value(-1),
         new Value(-1)
     ]
@@ -53,6 +54,7 @@ const Item = React.memo(({ item, index, isHover = false, onDrag, isActive, trans
     const top = 100 * index + 100 / 2
     return (
         <TouchableOpacity
+            onPress={onSnapToTopCb}
             disabled={isHover}
             onLongPress={() => onDrag(item, index)}
         >
@@ -118,7 +120,7 @@ const Index = ({
         data: exampleData,
         viewableItems: []
     })
-    const [activeIndex, hoverIndex] = useInitData()
+    const [activeIndex, hoverIndex, isMoveUp] = useInitData()
     const [panState, translationY, translateYOffset, absoluteY, velocityY, contentOffsetY] = useMemo(() => {
         return [
             new Value(State.UNDETERMINED),
@@ -153,7 +155,29 @@ const Index = ({
             }
         })
     }, [])
+    const handleSnapToTop = useCallback(({ item }) => {
+        const key = keyExtractor(item)
+        console.info('DCM key', key, dic.current.viewableItems)
+        let activeItem = null
+        let activeIndex = null
 
+        dic.current.viewableItems.forEach((element, index) => {
+            if (keyExtractor(element.item) === key) {
+                activeItem = element;
+                activeIndex = index
+            }
+        });
+        tronV2(activeIndex)
+        console.info('DCM activeItem', activeItem, activeIndex)
+    }, [])
+    const tronV2 = useCallback((activeIndex) => {
+        dic.current.viewableItems
+        // Handle trong activeIndex with activeIndex -1 
+        if (activeIndex <= 0) return
+        console.info('DCM start swap', activeIndex, activeIndex - 1)
+        tron({ indexStart: activeIndex - 1, indexEnd: activeIndex })
+        tronV2(activeIndex - 1)
+    }, [])
     const tron = useCallback(({ indexStart = 4, indexEnd = 5 }) => {
         return
         const { leftData, rightData } = extraData({ data: dic.current.data, viewableItems: dic.current.viewableItems })
@@ -167,7 +191,7 @@ const Index = ({
         console.info('newData,itemBottom,itemTop', newData, itemBottom, itemTop, leftData, rightData)
         newData = [...leftData, ...newData, ...rightData]
         LayoutAnimation.create(
-            200,
+            500,
             LayoutAnimation.Types.linear,
             LayoutAnimation.Properties.opacity
         )
@@ -187,10 +211,117 @@ const Index = ({
             />
         )
     }, [state.item.key])
+    const renderHoverRowV2 = useCallback(() => {
+        if (!state.hoverComponent) return
+        const key = keyExtractor(state.item)
+        console.info('DCM state.hoverComponent', state, key)
+        const { activeIndex: activeIndexValue, activeItem } = findIndexActive({
+            item: state.item,
+            viewableItems: dic.current.viewableItems,
+            keyExtractor
+        })
+        const paddingTop = cellData.get(key).offsetY
+        const indexDistance = new Value(0)
+        activeIndex.setValue(activeIndexValue)
+        const value = add(sub(paddingTop, contentOffsetY), translationY)
+        const isTopActiveItem = cond(lessOrEq(translationY, 0), 1, 0)
+        const distance = block(
+            cond(
+                eq(isMoveUp, DIRECTION.UP),
+                cond(
+                    eq(isTopActiveItem, 1),
+                    add(translationY, -ITEM_HEIGHT / 2),
+                    add(translationY, ITEM_HEIGHT / 2)
+                ),
+                cond(
+                    eq(isTopActiveItem, 1),
+                    add(translationY, -ITEM_HEIGHT / 2),
+                    add(translationY, ITEM_HEIGHT / 2)
+                )
+            )
+        )
+        const deltal = cond(eq(isTopActiveItem, 1), multiply(floor(abs(divide(
+            distance,
+            ITEM_HEIGHT
+        ))), -1), floor(divide(
+            distance,
+            ITEM_HEIGHT
+        )))
+        return (
+            <Animated.View pointerEvents={'box-none'} style={[StyleSheet.absoluteFillObject, {
+                paddingTop: value
+            }]}>
+                {!!state.hoverComponent && state.hoverComponent}
+                <Animated.Code exec={block([
+                    onChange(translationY, block([
+                        set(
+                            indexDistance,
+                            deltal
+                        ),
+                        // call([
+                        //     translationY,
+                        //     floor(
+                        //         divide(
+                        //             add(abs(translationY), ITEM_HEIGHT / 2),
+                        //             ITEM_HEIGHT
+                        //         )
+                        //     ),
+                        //     divide(
+                        //         add(abs(translationY), ITEM_HEIGHT / 2),
+                        //         ITEM_HEIGHT
+                        //     ),
+                        //     sub(activeIndexValue,
+                        //         floor(
+                        //             divide(
+                        //                 add(abs(translationY), ITEM_HEIGHT / 2),
+                        //                 ITEM_HEIGHT
+                        //             )
+                        //         ))
+                        // ], ([a, b, c, d]) => {
+                        //     console.info('DCM ', a, b, c, d)
+                        // }),
+                    ])),
+                    onChange(indexDistance, block([
+                        cond(
+                            eq(isMoveUp, DIRECTION.UP),
+                            call([indexDistance], ([a]) => {
+                                const index = activeIndexValue + a
+                                console.info('swap', index, index + 1)
+                                tron({
+                                    indexStart: index, indexEnd: index + 1
+                                })
+                            }),
+                            call([indexDistance], ([a]) => {
+                                const index = activeIndexValue + a
+                                console.info('swap', index, index - 1)
+                                tron({ indexStart: index - 1, indexEnd: index })
+                            })
+                        )
+                    ])),
+                    // onChange(velocityY, call([velocityY], ([a]) => {
+                    //     // console.info('velocityY', a)
+                    // })),
+                    // onChange(isMoveUp, call([isMoveUp], ([a]) => {
+                    //     console.info('isMove', a)
+                    // })),
+                    // onChange(activeIndex, block([
+                    //     call([activeIndex], ([a]) => {
+                    //         console.info('change activeIndex', a)
+                    //     })
+                    // ]))
+                ])} />
+            </Animated.View>
+        )
+    }, [state.hoverComponent])
     const renderHoverRow = useCallback(() => {
         if (!state.hoverComponent) return
         const key = keyExtractor(state.item)
         // console.info('DCM state.hoverComponent', state, key)
+        const { activeIndex, activeItem } = findIndexActive({
+            item: state.item,
+            viewableItems: dic.current.viewableItems,
+            keyExtractor
+        })
         const paddingTop = cellData.get(key).offsetY
 
         const value = add(sub(paddingTop, contentOffsetY), translationY)
@@ -306,6 +437,8 @@ const Index = ({
     const renderList = useMemo(() => {
         return (
             <AnimatedFlatList
+                onViewableItemsChanged={onViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
                 updateCellsBatchingPeriod={30}
                 getItemLayout={getItemLayout}
                 viewabilityConfig={viewabilityConfig}
@@ -331,7 +464,28 @@ const Index = ({
             }
         })
     }, [])
+    const { preTranslationY, nextTranslationY } = useMemo(() => {
+        return {
+            nextTranslationY: new Value(0),
+            preTranslationY: new Value(0),
+        }
+    }, [])
     useCode(block([
+        onChange(translationY, block([
+            set(preTranslationY, nextTranslationY),
+            set(nextTranslationY, translationY),
+            // call([preTranslationY, nextTranslationY], ([a, b]) => console.info('object', a, b)),
+            cond(greaterThan(sub(nextTranslationY, preTranslationY), 0), set(isMoveUp, DIRECTION.DOWN), set(isMoveUp, DIRECTION.UP))
+        ])),
+        // onChange(
+        //     velocityY,
+        //     cond(
+        //         lessThan(velocityY, 0),
+        //         set(isMoveUp, DIRECTION.UP),
+        //         cond(
+        //             greaterThan(velocityY, 0),
+        //             set(isMoveUp, DIRECTION.DOWN)
+        //         ))),
         cond(or(
             eq(panState, State.END),
             eq(panState, State.CANCELLED),
@@ -342,14 +496,16 @@ const Index = ({
         })
     ]), [panState])
     return (
-        <PanGestureHandler {...gestureHandler}>
+        <PanGestureHandler
+            minDist={8}
+            {...gestureHandler}>
             <Animated.View onLayout={e => console.info('heightDevices - e.nativeEvent.layout.height', heightDevices - e.nativeEvent.layout.height)} style={{
                 flex: 1,
                 borderWidth: 1,
                 borderColor: 'red'
             }}>
                 {renderList}
-                {renderHoverRow()}
+                {renderHoverRowV2()}
 
             </Animated.View>
 
