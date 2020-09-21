@@ -11,7 +11,7 @@ import SliderTest from './components/SliderTest/index'
 import BottomSheet from './components/bottom_sheet_reanimated/index'
 import Animated from 'react-native-reanimated'
 import ExampleSequenceFlatlist from './components/SequenceFlatList/Example'
-import Sortalbe from './components/sort_able'
+import Sortalbe from './components/sort_able/Test'
 const { height: heightDevice } = Dimensions.get('window')
 if (__DEV__) {
   import('./reactotronConfig').then(() => console.log('Reactotron Configured'))

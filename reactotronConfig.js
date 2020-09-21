@@ -1,5 +1,5 @@
 import Reactotron, { networking } from 'reactotron-react-native';
-
+import AsyncStorage from "@react-native-community/async-storage";
 if (__DEV__) {
     // const emitter = new EventEmitter();
 
@@ -13,6 +13,7 @@ if (__DEV__) {
         .useReactNative({
             networking: false
         })
+        .setAsyncStorageHandler(AsyncStorage)
         .connect();
 
     // Let's clear Reactotron on every time we load the app
